@@ -6,3 +6,11 @@ C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bull
 C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.CoreCompileInputs.cache
 C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.exe
 C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.pdb
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\bin\Debug\Bullet.exe.config
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\bin\Debug\Bullet.exe
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\bin\Debug\Bullet.pdb
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.AssemblyReference.cache
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.SuggestedBindingRedirects.cache
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.CoreCompileInputs.cache
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.exe
+C:\Users\tngzj\Desktop\bullet_trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.pdb
