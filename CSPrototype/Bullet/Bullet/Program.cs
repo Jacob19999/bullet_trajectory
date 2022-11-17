@@ -216,7 +216,7 @@ class Bullet
         elapsed_Ms = elapsed_Ms + (this.dt) * 1000;
 
 
-        Console.WriteLine(elapsed_Ms + " ms " + Math.Round(getRelativeSpeed(), 1) + "  m/s "  + Math.Round(getMach(getRelativeSpeed(), temp_k),2) + " mach , X = " + Math.Round(this.pos[0],4) + "m , Y = " + Math.Round(this.pos[1], 4) + "m , Z = " + Math.Round(this.pos[2], 4)+"m");
+        Console.WriteLine(Math.Round(elapsed_Ms/1000, 1) + "s " + Math.Round(getRelativeSpeed(), 1) + "m/s "  + Math.Round(getMach(getRelativeSpeed(), temp_k),2) + " mach , X = " + Math.Round(this.pos[0],4) + "m , Y = " + Math.Round(this.pos[1], 4) + "m , Z = " + Math.Round(this.pos[2], 4)+"m");
 
     }
 
