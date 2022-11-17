@@ -65,6 +65,7 @@ class Bullet
     double[] lateralAccel = new double[3];
     double[] drag_Vector = new double[3];
     double[] velocity_Vector = new double[3];
+    double[] centripetalAccel_Vector = new double[3];
     double[] centripetal_Vector = new double[3];
     double[] coriolis_Vector = new double[3];
     double[] coriolisAccel_Vector = new double[3];
@@ -179,6 +180,7 @@ class Bullet
         getDrag();
         getCoriolis();
         getWindForce();
+        getCentripetal();
 
         integratePosition();
         
@@ -205,6 +207,8 @@ class Bullet
     public void integratePosition()
     {
 
+        // Integrate Acceleration
+
         // Integrate Gravity
         this.velocity_Vector[0] = this.velocity_Vector[0] + this.gravity_Vector[0];
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.gravity_Vector[1];
@@ -220,28 +224,58 @@ class Bullet
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.windForce_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.windForce_Vector[2];
 
-
         // Integrate Coriolis
         this.velocity_Vector[0] = this.velocity_Vector[0] + this.coriolis_Vector[0];
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.coriolis_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.coriolis_Vector[2];
 
+        // Integrate Centripetal
+       this.velocity_Vector[0] = this.velocity_Vector[0] + this.centripetal_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.centripetal_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.centripetal_Vector[2];
 
 
-        // Integrate Position
+
+
+
+
+        // Integrate Velocity
+        // Update Displacement
         this.prev_pos[0] = pos[0];
         this.prev_pos[1] = pos[1];
         this.prev_pos[2] = pos[2];
 
-        this.pos[0] = pos[0] + this.velocity_Vector[0] * dt;
-        this.pos[1] = pos[1] + this.velocity_Vector[1] * dt;
-        this.pos[2] = pos[2] + this.velocity_Vector[2] * dt;
+        this.pos[0] = pos[0] + (this.velocity_Vector[0] * dt);
+        this.pos[1] = pos[1] + (this.velocity_Vector[1] * dt);
+        this.pos[2] = pos[2] + (this.velocity_Vector[2] * dt);
 
 
     }
     private void getLat()
     {
         this.currentLatitude = 44.166130;
+    }
+
+    private void getCentripetal()
+    {
+        // Eötvös effect . Vertical Coroiolis Drift. 
+        // Reference : http://www.cleonis.nl/physics/phys256/eotvos.php
+        // x = east west vector
+        // z = north south vector 
+
+        this.centripetalAccel_Vector[0] = 0;
+        this.centripetalAccel_Vector[2] = 0;
+
+        this.centripetalAccel_Vector[1] = (2 * k_omega * this.velocity_Vector[0] * Math.Sin(this.currentLatitude * (Math.PI / 180)))
+                                           + ((Math.Pow(velocity_Vector[0], 2) + Math.Pow(velocity_Vector[2], 2)) / this.Re);
+
+        // Integrate To Velocity
+        this.centripetal_Vector[0] = this.centripetal_Vector[0] + (this.centripetalAccel_Vector[0] * dt);
+        this.centripetal_Vector[1] = this.centripetal_Vector[1] + (this.centripetalAccel_Vector[1] * dt);
+        this.centripetal_Vector[2] = this.centripetal_Vector[2] + (this.centripetalAccel_Vector[2] * dt);
+
+        //Console.WriteLine("Centripetal X = " + this.centripetal_Vector[0] + " Y = " + this.centripetal_Vector[1] + " Z = " + this.centripetal_Vector[2]);
+
     }
 
     private void getCoriolis()
@@ -343,6 +377,8 @@ class Bullet
 
         return _mach;
     }
+
+
 
     public double getRetardation()
     {
