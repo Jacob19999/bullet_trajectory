@@ -22,16 +22,12 @@ namespace Program
             // Drag Model , Mass (Grains), Twist (inch/Turn), Diameter (M), Length (M), Pressure (pa) , Temp(k)
 
             var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 900, 10, 0.0078232, 0.0338328, 101325, 288.16);
-            bullet1.fire(0);
+            bullet1.fireBullet(0);
             Console.WriteLine("Stability Factor : " + bullet1.GetStabilityFactor());
             Console.WriteLine("Drag Coefficient : " + bullet1.getDragCoefficient());
             Console.WriteLine("Retardation : " + bullet1.getRetardation());
-
-
-            //bullet1.update();
-
-
             
+            // Integrate Trajectory Till Bullet Impact
             for (int i = 0; i < 2000; i++)
             {
 
@@ -71,6 +67,7 @@ class Bullet
     double[] velocity_Vector = new double[3];
     double[] centripetal_Vector = new double[3];
     double[] coriolis_Vector = new double[3];
+    double[] coriolisAccel_Vector = new double[3];
     double[] prev_coriolis = new double[3];
     double[] wind_Vector = new double[3];
     double[] windForce_Vector = new double[3];
@@ -96,6 +93,7 @@ class Bullet
     private double bullet_Direction;
     private double elapsed_Ms;
     private double cd_Current;
+    private double currentLatitude;
 
 
     //Imperial 
@@ -143,15 +141,16 @@ class Bullet
 
     }
 
-
-
-
-    public void fire(double firing_angle)
+    public void fireBullet(double firing_angle)
     {
 
         this.pos[0] = 0;
         this.pos[1] = 200;
         this.pos[2] = 0;
+
+        this.start_Pos[0] = this.pos[0];
+        this.start_Pos[1] = this.pos[1];
+        this.start_Pos[2] = this.pos[2];
 
         firing_angle = firing_angle * (Math.PI / 180);
 
@@ -175,21 +174,22 @@ class Bullet
 
     public void update()
     {
-
+        
         getGravity();
         getDrag();
-
-  
+        getCoriolis();
         getWindForce();
 
-        updatePosition();
+        integratePosition();
         
-        if (pos[1] < 0 )
+
+        print();
+
+        // If Bullet Collide with the Ground
+        if (pos[1] < 0)
         {
             projectileImpact = true;
         }
-
-        print();
 
     }
 
@@ -202,17 +202,13 @@ class Bullet
     }
 
 
-    public void updatePosition()
+    public void integratePosition()
     {
-        this.prev_pos = this.pos;
 
         // Integrate Gravity
         this.velocity_Vector[0] = this.velocity_Vector[0] + this.gravity_Vector[0];
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.gravity_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.gravity_Vector[2];
-
-
-        //Console.WriteLine("gravity_Vector = " + gravity_Vector[0] + " y = " + gravity_Vector[1] + " z = " + gravity_Vector[2]);
 
         // Integrate Drag
         this.velocity_Vector[0] = this.velocity_Vector[0] - this.drag_Vector[0];
@@ -220,28 +216,61 @@ class Bullet
         this.velocity_Vector[2] = this.velocity_Vector[2] - this.drag_Vector[2];
 
         // Integrate Wind
-        //this.velocity_Vector[0] = this.velocity_Vector[0] + this.windForce_Vector[0];
-        //this.velocity_Vector[1] = this.velocity_Vector[1] + this.windForce_Vector[1];
-        //this.velocity_Vector[2] = this.velocity_Vector[2] + this.windForce_Vector[2];
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.windForce_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.windForce_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.windForce_Vector[2];
+
+
+        // Integrate Coriolis
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.coriolis_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.coriolis_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.coriolis_Vector[2];
 
 
 
         // Integrate Position
+        this.prev_pos[0] = pos[0];
+        this.prev_pos[1] = pos[1];
+        this.prev_pos[2] = pos[2];
+
         this.pos[0] = pos[0] + this.velocity_Vector[0] * dt;
         this.pos[1] = pos[1] + this.velocity_Vector[1] * dt;
         this.pos[2] = pos[2] + this.velocity_Vector[2] * dt;
 
 
-        //Console.WriteLine("drag_Vector x = " + drag_Vector[0] + " y = " + drag_Vector[1] + " z = " + drag_Vector[2]);
+    }
+    private void getLat()
+    {
+        this.currentLatitude = 44.166130;
+    }
 
+    private void getCoriolis()
+    {
+
+        // Reference from https://phas.ubc.ca/~berciu/TEACHING/PHYS206/LECTURES/FILES/coriolis.pdf
+        getLat();
+
+        // Coriolis acceleration with respect to dt
+        this.coriolisAccel_Vector[0] = velocity_Vector[1] * k_omega * Math.Sin(currentLatitude * (Math.PI / 180)) * Math.Pow(dt, 2);
+        this.coriolisAccel_Vector[2] = velocity_Vector[1] * k_omega * Math.Cos(currentLatitude * (Math.PI / 180)) * Math.Pow(dt, 2);
+        this.coriolisAccel_Vector[1] = -((velocity_Vector[0] * k_omega * Math.Sin(currentLatitude * (Math.PI / 180))) 
+            + (velocity_Vector[2] * k_omega * Math.Cos(currentLatitude * (Math.PI / 180)))) * Math.Pow(dt, 2)
+            + ((g * k_omega * Math.Cos(currentLatitude * (Math.PI / 180))) * (Math.Pow(dt, 3) / 3));
+
+        // Integrate To Velocity
+        this.coriolis_Vector[0] = this.coriolis_Vector[0] + this.coriolisAccel_Vector[0];
+        this.coriolis_Vector[1] = this.coriolis_Vector[1] + this.coriolisAccel_Vector[1];
+        this.coriolis_Vector[2] = this.coriolis_Vector[2] + this.coriolisAccel_Vector[2];
 
     }
+
+
     public void updateWind()
     {
         // air speed m/s
         this.wind_Vector[0] = 2;
-        this.wind_Vector[1] = 5;
-        this.wind_Vector[2] = 20;
+        this.wind_Vector[1] = 1;
+        this.wind_Vector[2] = -3;
     }
     public void getWindForce()
     {
@@ -250,9 +279,9 @@ class Bullet
 
         double air_Density = (this.pressure / ((287.05) * this.temp_k));
 
-        this.windForce_Vector[0] = (0.5 * air_Density * Math.Pow(this.wind_Vector[0], 2) * this.front_Area * this.cd_Current) * dt / this.mass;
-        this.windForce_Vector[1] = (0.5 * air_Density * Math.Pow(this.wind_Vector[1], 2) * this.front_Area * this.cd_Current) * dt / this.mass;
-        this.windForce_Vector[2] = (0.5 * air_Density * Math.Pow(this.wind_Vector[2], 2) * this.front_Area * this.cd_Current) * dt / this.mass;
+        this.windForce_Vector[0] = (0.5 * air_Density * Math.Pow(this.wind_Vector[0], 2) * this.front_Area * this.cd_Current) / this.mass * dt;
+        this.windForce_Vector[1] = (0.5 * air_Density * Math.Pow(this.wind_Vector[1], 2) * (this.bullet_Dia* this.bullet_Len) * this.cd_Current) / this.mass * dt;
+        this.windForce_Vector[2] = (0.5 * air_Density * Math.Pow(this.wind_Vector[2], 2) * (this.bullet_Dia * this.bullet_Len) * this.cd_Current) / this.mass * dt;
 
         //Console.WriteLine("windForce_Vector x = " + windForce_Vector[0] + " y = " + windForce_Vector[1] + " z = " + windForce_Vector[2]);
 
@@ -329,14 +358,6 @@ class Bullet
 
         this.ballistic_Coefficient = this.mass_ibs / (_cd * ( Math.Pow( this.bullet_Dia_Inch , 2) * Math.PI ));
         drag = (0.5 * air_Density * Math.Pow(rel_Vel, 2) * this.front_Area * _cd);
-
-        //Console.WriteLine("Ballistic Coefficient = " + this.ballistic_Coefficient);
-        //Console.WriteLine("Sectional Density = " + this.sectional_Density);
-        //Console.WriteLine("Air Density = " + air_Density);
-        //Console.WriteLine("Velocity = " + rel_Vel);
-        //Console.WriteLine("Mach = " + rel_Vel);
-        //Console.WriteLine("Area = " + this.front_Area);
-        //Console.WriteLine("cd = " + _cd);
 
         return drag / this.mass; 
     }
