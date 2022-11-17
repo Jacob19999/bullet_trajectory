@@ -22,7 +22,7 @@ namespace Program
             // Drag Model , Mass (Grains), Twist (inch/Turn), Diameter (M), Length (M), Pressure (pa) , Temp(k)
 
             var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 822, 10, 0.0078232, 0.0338328, 101325, 288.16);
-            bullet1.fire(10);
+            bullet1.fire(0);
             Console.WriteLine("Stability Factor : " + bullet1.GetStabilityFactor());
             Console.WriteLine("Drag Coefficient : " + bullet1.getDragCoefficient());
             Console.WriteLine("Retardation : " + bullet1.getRetardation());
@@ -138,7 +138,6 @@ class Bullet
     public Bullet(dragModel dModel , double grains, double muzzleVelocity, double barrelTwist, double bulletDia, double bulletLen, double pressure, double temp)
     {
 
-
         this.drag_Model = dModel;
         this.mass = grains * 0.0000647989;
         this.mass_ibs = mass * 2.20462;
@@ -160,7 +159,6 @@ class Bullet
 
         stability_Fac = GetStabilityFactor();
 
-
     }
 
 
@@ -170,7 +168,7 @@ class Bullet
     {
 
         this.pos[0] = 0;
-        this.pos[1] = 0;
+        this.pos[1] = 500;
         this.pos[2] = 0;
 
         firing_angle = firing_angle * (Math.PI / 180);
@@ -188,7 +186,7 @@ class Bullet
 
         projectileImpact = false;
 
-        Console.WriteLine("Velocity x = " + velocity_Vector[0] + " y = " + velocity_Vector[1] + " z = " + velocity_Vector[2]);
+        //Console.WriteLine("Velocity x = " + velocity_Vector[0] + " y = " + velocity_Vector[1] + " z = " + velocity_Vector[2]);
 
     }
 
@@ -213,9 +211,12 @@ class Bullet
 
     public void print()
     {
+
+
         elapsed_Ms = elapsed_Ms + (this.dt) * 1000;
 
-        Console.WriteLine("Time (ms) = " + elapsed_Ms + " Speed (m/s) = " + getRelativeSpeed() + " Pos : " + this.pos[0] + " , " + this.pos[1] + " , " + this.pos[2]);
+
+        Console.WriteLine(elapsed_Ms + " ms " + Math.Round(getRelativeSpeed(), 1) + "  m/s "  + Math.Round(getMach(getRelativeSpeed(), temp_k),2) + " mach , X = " + Math.Round(this.pos[0],4) + "m , Y = " + Math.Round(this.pos[1], 4) + "m , Z = " + Math.Round(this.pos[2], 4)+"m");
 
     }
 
@@ -246,8 +247,8 @@ class Bullet
     {
         // air speed m/s
         this.wind_Vector[0] = 2;
-        this.wind_Vector[1] = 5;
-        this.wind_Vector[2] = 1;
+        this.wind_Vector[1] = 1;
+        this.wind_Vector[2] = 5;
 
         this.wind_Vector[0] = this.wind_Vector[0] * dt;
         this.wind_Vector[1] = this.wind_Vector[1] * dt;
@@ -325,34 +326,6 @@ class Bullet
 
         return _mach;
     }
-
-    /*
-    private void GetPosition()
-    {   
-        // Z and X Component
-        bullet_Direction = Math.Atan2(velocity[2], velocity[0]);
-
-
-
-
-        m_distance = Vector3.Distance(transform.position, m_startPosition);
-    }
-
-    private void CalculateCoriolis()
-    {
-
-        float speed = m_distance / m_timeOfFlight;
-        float deflectionX = (k_omega * Mathf.Pow(m_distance, 2) *
-            Mathf.Sin(_currentLatitude)) / speed;
-        float deflectionY = (1 - 2 * (k_omega * this.muzzle_Velocity /
-            k_gravity) * Mathf.Cos(_currentLatitude) * Mathf.Sin(m_bulletDirection));
-        float drop = m_startPosition.y - transform.position.y;
-        deflectionY = deflectionY * drop - drop;
-        m_vectorCoriolis = new Vector3(deflectionX, deflectionY, 0);
-        m_vectorCoriolis = m_vectorCoriolis - m_previousCoriolisDeflection;
-        m_previousCoriolisDeflection = new Vector3(deflectionX, deflectionY, 0);
-    }
-    */
 
     public double getRetardation()
     {
@@ -1076,3 +1049,5 @@ class Bullet
 
 
 }
+
+
