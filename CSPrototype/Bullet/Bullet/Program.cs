@@ -73,6 +73,7 @@ class Bullet
     double[] coriolis_Vector = new double[3];
     double[] prev_coriolis = new double[3];
     double[] wind_Vector = new double[3];
+    double[] windForce_Vector = new double[3];
     double[] gravity_Vector = new double[3];
     double[] velocity_Vector_dt = new double[3];
 
@@ -94,6 +95,7 @@ class Bullet
     private double dt;
     private double bullet_Direction;
     private double elapsed_Ms;
+    private double cd_Current;
 
 
     //Imperial 
@@ -174,9 +176,11 @@ class Bullet
     public void update()
     {
 
-        updateWind();
         getGravity();
         getDrag();
+
+  
+        getWindForce();
 
         updatePosition();
         
@@ -203,14 +207,9 @@ class Bullet
         this.prev_pos = this.pos;
 
         // Integrate Gravity
-
         this.velocity_Vector[0] = this.velocity_Vector[0] + this.gravity_Vector[0];
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.gravity_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.gravity_Vector[2];
-
-        this.pos[0] = pos[0] + this.velocity_Vector[0] * dt;
-        this.pos[1] = pos[1] + this.velocity_Vector[1] * dt;
-        this.pos[2] = pos[2] + this.velocity_Vector[2] * dt;
 
 
         //Console.WriteLine("gravity_Vector = " + gravity_Vector[0] + " y = " + gravity_Vector[1] + " z = " + gravity_Vector[2]);
@@ -220,28 +219,42 @@ class Bullet
         this.velocity_Vector[1] = this.velocity_Vector[1] - this.drag_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] - this.drag_Vector[2];
 
+        // Integrate Wind
+        //this.velocity_Vector[0] = this.velocity_Vector[0] + this.windForce_Vector[0];
+        //this.velocity_Vector[1] = this.velocity_Vector[1] + this.windForce_Vector[1];
+        //this.velocity_Vector[2] = this.velocity_Vector[2] + this.windForce_Vector[2];
+
+
 
         // Integrate Position
         this.pos[0] = pos[0] + this.velocity_Vector[0] * dt;
         this.pos[1] = pos[1] + this.velocity_Vector[1] * dt;
         this.pos[2] = pos[2] + this.velocity_Vector[2] * dt;
 
+
         //Console.WriteLine("drag_Vector x = " + drag_Vector[0] + " y = " + drag_Vector[1] + " z = " + drag_Vector[2]);
 
 
     }
-
-
     public void updateWind()
     {
         // air speed m/s
-        this.wind_Vector[0] = 0;
-        this.wind_Vector[1] = 0;
-        this.wind_Vector[2] = 0;
+        this.wind_Vector[0] = 2;
+        this.wind_Vector[1] = 5;
+        this.wind_Vector[2] = 20;
+    }
+    public void getWindForce()
+    {
 
-        this.wind_Vector[0] = this.wind_Vector[0] * dt;
-        this.wind_Vector[1] = this.wind_Vector[1] * dt;
-        this.wind_Vector[2] = this.wind_Vector[2] * dt;
+        updateWind();
+
+        double air_Density = (this.pressure / ((287.05) * this.temp_k));
+
+        this.windForce_Vector[0] = (0.5 * air_Density * Math.Pow(this.wind_Vector[0], 2) * this.front_Area * this.cd_Current) * dt / this.mass;
+        this.windForce_Vector[1] = (0.5 * air_Density * Math.Pow(this.wind_Vector[1], 2) * this.front_Area * this.cd_Current) * dt / this.mass;
+        this.windForce_Vector[2] = (0.5 * air_Density * Math.Pow(this.wind_Vector[2], 2) * this.front_Area * this.cd_Current) * dt / this.mass;
+
+        //Console.WriteLine("windForce_Vector x = " + windForce_Vector[0] + " y = " + windForce_Vector[1] + " z = " + windForce_Vector[2]);
 
     }
 
@@ -255,8 +268,6 @@ class Bullet
         this.gravity_Vector[0] = 0;
         this.gravity_Vector[1] = this.g * dt;
         this.gravity_Vector[2] = 0;
-
-        //Console.WriteLine("Gravity = " + gravity_Vector[0] + " , " + gravity_Vector[1] + " , " + gravity_Vector[2]);
 
     }
 
@@ -273,13 +284,6 @@ class Bullet
         this.drag_Vector[1] = v_drag[1] * _drag;
         this.drag_Vector[2] = v_drag[2] * _drag;
 
-
-        //Console.WriteLine("Drag = " + drag_Vector[0] + " , " + drag_Vector[1] + " , " + drag_Vector[2]);
-
-        //Console.WriteLine(" Drag [0] = " + this.drag[0]);
-        //Console.WriteLine(" Drag [1] = " + this.drag[1]);
-        //Console.WriteLine(" Drag [2] = " + this.drag[2]);
-
     }
 
 
@@ -287,19 +291,14 @@ class Bullet
     {
 
         // Get Velocity Vector3 from unity. Using rb.Velocity.Magnitude
-        this.velocity_Vector = vectorOperation(this.velocity_Vector, this.wind_Vector, "+");
-
-        return velocity_Vector;
+        return vectorOperation(this.velocity_Vector, this.wind_Vector, "+");
     }
 
     private double getRelativeSpeed()
     {
 
         // Get Velocity Vector3 from unity. Using rb.Velocity.Magnitude
-        this.velocity_Vector = vectorOperation(this.velocity_Vector, this.wind_Vector, "-");
-        double relative_Velocity = vectorlength(this.velocity_Vector);
-
-        return relative_Velocity;
+        return vectorlength(vectorOperation(this.velocity_Vector, this.wind_Vector, "-"));
     }
 
     private double getMach(double relativeSpeed, double temp_k)
@@ -322,6 +321,7 @@ class Bullet
         // Reference https://www.jbmballistics.com/ballistics/topics/cdkd.shtml
 
         double _cd = getDragCoefficient();
+        this.cd_Current = _cd;
         double _kd = _cd * 0.3927;
         double air_Density = (this.pressure / ((287.05) * this.temp_k));
         double rel_Vel = getRelativeSpeed();
