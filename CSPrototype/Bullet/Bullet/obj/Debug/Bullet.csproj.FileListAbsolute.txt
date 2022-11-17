@@ -1,0 +1,8 @@
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\bin\Debug\Bullet.exe.config
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\bin\Debug\Bullet.exe
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\bin\Debug\Bullet.pdb
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.AssemblyReference.cache
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.SuggestedBindingRedirects.cache
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.csproj.CoreCompileInputs.cache
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.exe
+C:\Users\user\Desktop\Bullet Trajectory\CSPrototype\Bullet\Bullet\obj\Debug\Bullet.pdb
