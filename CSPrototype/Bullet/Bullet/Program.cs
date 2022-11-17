@@ -2,6 +2,7 @@
 
 
 using System;
+using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -21,16 +22,31 @@ namespace Program
             // Drag Model , Mass (Grains), Twist (inch/Turn), Diameter (M), Length (M), Pressure (pa) , Temp(k)
 
             var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 822, 10, 0.0078232, 0.0338328, 101325, 288.16);
-            bullet1.fire(5);
-            bullet1.update();
-
+            bullet1.fire(10);
             Console.WriteLine("Stability Factor : " + bullet1.GetStabilityFactor());
             Console.WriteLine("Drag Coefficient : " + bullet1.getDragCoefficient());
             Console.WriteLine("Retardation : " + bullet1.getRetardation());
 
 
+            //bullet1.update();
 
 
+            
+            for (int i = 0; i < 400; i++)
+            {
+
+                bullet1.update();
+                Thread.Sleep(50);
+
+                if (bullet1.projectileImpact == true)
+                {
+                    Console.WriteLine("Porjectile Imapcted Ground.");
+                    break;
+                }
+
+
+            }
+            
 
             /////////////////////////////////// Test Code ///////////////////////////////
             double A = 0;
@@ -47,7 +63,7 @@ namespace Program
                 m_retardation = m_retardation / 3.2808399;
             }
 
-            Console.WriteLine("Retardation Test : " + m_retardation);
+            //Console.WriteLine("Retardation Test : " + m_retardation);
             /////////////////////////////////// Test Code ///////////////////////////////
 
 
@@ -78,11 +94,13 @@ class Bullet
     double[] prev_coriolis = new double[3];
     double[] wind_Vector = new double[3];
     double[] gravity_Vector = new double[3];
+    double[] velocity_Vector_dt = new double[3];
 
     // Metric
-
-    private const double g = -9.80665;
-    private const double k_omega = 0.000072921159;
+    private double Re = 6356766;
+    private double Me = 5.9722e24;
+    private double g = -9.80665;
+    private double k_omega = 0.000072921159;
     private double mass;
     private double mass_ibs;
     private double twist;
@@ -95,6 +113,7 @@ class Bullet
     private double front_Area;
     private double dt;
     private double bullet_Direction;
+    private double elapsed_Ms;
 
 
     //Imperial 
@@ -109,6 +128,8 @@ class Bullet
     private double sectional_Density;
     private double stability_Fac;
 
+    //
+    public bool projectileImpact { get; set; } 
 
     public enum dragModel { G1, G2, G3, G4, G5, G6, G7, G8, GS };
     public dragModel drag_Model;
@@ -133,61 +154,21 @@ class Bullet
         this.calibers = this.bullet_Len / this.bullet_Dia;
         this.twist_Calibers = barrelTwist / this.bullet_Dia_Inch;
         this.front_Area = Math.PI * Math.Pow(this.bullet_Dia / 2, 2);
-        sectional_Density = this.mass_ibs / Math.Pow(this.bullet_Dia_Inch, 2);
-        this.dt = 1; // Fixed Delta Time (Seconds)
+        this.sectional_Density = this.mass_ibs / Math.Pow(this.bullet_Dia_Inch, 2);
+        this.dt = 0.05; // Fixed Delta Time (Seconds)
+        this.elapsed_Ms = 0;
 
         stability_Fac = GetStabilityFactor();
 
 
     }
 
-    private double[] vectorNormalize(double[] input)
-    {
 
-        double[] outpout = {0,0,0};
-
-        outpout[0] = input[0] / vectorlength(input);
-        outpout[1] = input[1] / vectorlength(input);
-        outpout[2] = input[2] / vectorlength(input);
-
-        return outpout;
-    }
-
-    private double vectorlength(double[] input)
-    {
-        return Math.Sqrt(Math.Pow(input[0], 2) + Math.Pow(input[1], 2) + Math.Pow(input[2], 2)); ;
-    }
-
-    private double[] vectorOperation(double[] input1, double[] input2, string _operator)
-    {
-
-        double[] outpout = { 0, 0, 0 };
-
-        if (_operator == "+")
-        {
-            outpout[0] = input1[0] + input2[0];
-            outpout[1] = input1[1] + input2[1];
-            outpout[2] = input1[2] + input2[2];
-        } 
-        else if (_operator == "-")
-        {
-            outpout[0] = input1[0] - input2[0];
-            outpout[1] = input1[1] - input2[1];
-            outpout[2] = input1[2] - input2[2];
-        }
-        else if (_operator == "*")
-        {
-            outpout[0] = input1[0] * input2[0];
-            outpout[1] = input1[1] * input2[1];
-            outpout[2] = input1[2] * input2[2];
-        }
-
-        return outpout;
-    }
 
 
     public void fire(double firing_angle)
     {
+
         this.pos[0] = 0;
         this.pos[1] = 0;
         this.pos[2] = 0;
@@ -195,13 +176,19 @@ class Bullet
         firing_angle = firing_angle * (Math.PI / 180);
 
         //Y
-        this.velocity_Vector[1] = Math.Sin(firing_angle ) * this.muzzle_Velocity;
+        this.velocity_Vector[1] = Math.Sin(firing_angle) * this.muzzle_Velocity ;
         //X
-        this.velocity_Vector[0] = Math.Cos(firing_angle) * this.muzzle_Velocity;
+        this.velocity_Vector[0] = Math.Cos(firing_angle) * this.muzzle_Velocity ;
         //Z
         this.velocity_Vector[2] = 0;
 
-        //Console.WriteLine("Velocity x = " + velocity[0] + " y = " + velocity[1] + " z = " + velocity[2]);
+        velocity_Vector_dt[0] = this.velocity_Vector[0] * dt;
+        velocity_Vector_dt[1] = this.velocity_Vector[1] * dt;
+        velocity_Vector_dt[2] = 0;
+
+        projectileImpact = false;
+
+        Console.WriteLine("Velocity x = " + velocity_Vector[0] + " y = " + velocity_Vector[1] + " z = " + velocity_Vector[2]);
 
     }
 
@@ -210,10 +197,25 @@ class Bullet
     {
 
         updateWind();
+        getGravity();
         getDrag();
 
-
         updatePosition();
+        
+        if (pos[1] < 0 )
+        {
+            projectileImpact = true;
+        }
+
+        print();
+
+    }
+
+    public void print()
+    {
+        elapsed_Ms = elapsed_Ms + (this.dt) * 1000;
+
+        Console.WriteLine("Time (ms) = " + elapsed_Ms + " Speed (m/s) = " + getRelativeSpeed() + " Pos : " + this.pos[0] + " , " + this.pos[1] + " , " + this.pos[2]);
 
     }
 
@@ -223,10 +225,18 @@ class Bullet
         this.prev_pos = this.pos;
 
         // Integrate Gravity
+        this.pos = vectorOperation(this.pos, this.gravity_Vector, "+");
+        this.pos[0] = pos[0] + gravity_Vector[0] * dt;
+        this.pos[1] = pos[1] + gravity_Vector[1] * dt;
+        this.pos[2] = pos[2] + gravity_Vector[2] * dt;
 
         // Integrate Drag
-        vectorOperation(this.pos, this.drag_Vector, "-");
+        this.velocity_Vector = vectorOperation(this.velocity_Vector, this.drag_Vector, "-");
+        this.pos[0] = pos[0] + velocity_Vector[0] * dt;
+        this.pos[1] = pos[1] + velocity_Vector[1] * dt;
+        this.pos[2] = pos[2] + velocity_Vector[2] * dt;
 
+        //Console.WriteLine("Velocity x = " + velocity_Vector[0] + " y = " + velocity_Vector[1] + " z = " + velocity_Vector[2]);
 
 
     }
@@ -235,9 +245,9 @@ class Bullet
     public void updateWind()
     {
         // air speed m/s
-        this.wind_Vector[0] = 0;
-        this.wind_Vector[1] = 0;
-        this.wind_Vector[2] = 0;
+        this.wind_Vector[0] = 2;
+        this.wind_Vector[1] = 5;
+        this.wind_Vector[2] = 1;
 
         this.wind_Vector[0] = this.wind_Vector[0] * dt;
         this.wind_Vector[1] = this.wind_Vector[1] * dt;
@@ -247,9 +257,16 @@ class Bullet
 
     public void getGravity()
     {
-        this.gravity_Vector[0] = 0 * dt;
-        this.gravity_Vector[1] = -9.80665 * dt;
-        this.gravity_Vector[2] = 0 * dt;
+
+        // Reference from: 2.2 Ballistic Model: Empirical Data to Determine Transonic Drag Coefficient pdf
+
+        double r = Math.Sqrt(Math.Pow(pos[0], 2) + Math.Pow( ((pos[1]) + this.Re), 2) );
+
+        this.gravity_Vector[0] = 0;
+        this.gravity_Vector[1] = this.g * dt;
+        this.gravity_Vector[2] = 0;
+
+        //Console.WriteLine("Gravity = " + gravity_Vector[0] + " , " + gravity_Vector[1] + " , " + gravity_Vector[2]);
 
     }
 
@@ -262,7 +279,12 @@ class Bullet
 
         v_drag = vectorNormalize(getTrueSpeed());
 
-        vectorOperation(this.drag_Vector, v_drag, "*");
+        this.drag_Vector[0] = v_drag[0] * _drag;
+        this.drag_Vector[1] = v_drag[1] * _drag;
+        this.drag_Vector[2] = v_drag[2] * _drag;
+
+
+        //Console.WriteLine("Drag = " + drag_Vector[0] + " , " + drag_Vector[1] + " , " + drag_Vector[2]);
 
         //Console.WriteLine(" Drag [0] = " + this.drag[0]);
         //Console.WriteLine(" Drag [1] = " + this.drag[1]);
@@ -275,7 +297,7 @@ class Bullet
     {
 
         // Get Velocity Vector3 from unity. Using rb.Velocity.Magnitude
-        vectorOperation(this.velocity_Vector, this.wind_Vector, "+");
+        this.velocity_Vector = vectorOperation(this.velocity_Vector, this.wind_Vector, "+");
 
         return velocity_Vector;
     }
@@ -284,7 +306,7 @@ class Bullet
     {
 
         // Get Velocity Vector3 from unity. Using rb.Velocity.Magnitude
-        vectorOperation(this.velocity_Vector, this.wind_Vector, "-");
+        this.velocity_Vector = vectorOperation(this.velocity_Vector, this.wind_Vector, "-");
         double relative_Velocity = vectorlength(this.velocity_Vector);
 
         return relative_Velocity;
@@ -295,12 +317,10 @@ class Bullet
         double _mach;
         double _c;
 
-
         // Speed of sound (m/s)
         // C0 = 20.046 m/s @ 1k
 
         _c = 20.046 * Math.Sqrt(temp_k);
-
         _mach = relativeSpeed / _c;
 
         return _mach;
@@ -369,7 +389,7 @@ class Bullet
 
         mach = getMach(getRelativeSpeed(), temp_k);
 
-        Console.WriteLine("Relative Speed : " + getRelativeSpeed() + " Mach: " + mach);
+        //Console.WriteLine("Relative Speed : " + getRelativeSpeed() + " Mach: " + mach);
 
         if (drag_Model == dragModel.G1)
         {
@@ -997,6 +1017,54 @@ class Bullet
         this.baro = this.pressure * 0.0002953;
         this.temp_F = ((this.temp_k - 273.15) * 1.8) + 32;
 
+    }
+
+    private double[] vectorNormalize(double[] input)
+    {
+
+        double[] outpout = { 0, 0, 0 };
+
+        outpout[0] = input[0] / vectorlength(input);
+        outpout[1] = input[1] / vectorlength(input);
+        outpout[2] = input[2] / vectorlength(input);
+
+        return outpout;
+    }
+
+    private double vectorlength(double[] input)
+    {
+        return Math.Sqrt(Math.Pow(input[0], 2) + Math.Pow(input[1], 2) + Math.Pow(input[2], 2)); ;
+    }
+
+    private double[] vectorOperation(double[] input1, double[] input2, string _operator)
+    {
+
+        double[] outpout = { 0, 0, 0 };
+
+        if (_operator == "+")
+        {
+            outpout[0] = input1[0] + input2[0];
+            outpout[1] = input1[1] + input2[1];
+            outpout[2] = input1[2] + input2[2];
+        }
+        else if (_operator == "-")
+        {
+            outpout[0] = input1[0] - input2[0];
+            outpout[1] = input1[1] - input2[1];
+            outpout[2] = input1[2] - input2[2];
+        }
+        else if (_operator == "*")
+        {
+            outpout[0] = input1[0] * input2[0];
+            outpout[1] = input1[1] * input2[1];
+            outpout[2] = input1[2] * input2[2];
+        }
+
+        //Console.WriteLine("Input1 : " + input1[0] + " , " + input1[1] + " , " + +input1[2]);
+        //Console.WriteLine("Input2 : " + input2[0] + " , " + input2[1] + " , " + +input2[2]);
+        //Console.WriteLine("Output : " + outpout[0] + " , " + outpout[1] + " , "+ +outpout[2]);
+
+        return outpout;
     }
 
 
