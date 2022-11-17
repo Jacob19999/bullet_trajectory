@@ -1,4 +1,5 @@
-﻿// Bullet Trajectory calculator in 3D vector Written by Jacob Thang for prototyping in Unity. 
+﻿// Bullet Trajectory calculator in 3D vector
+// Written by Jacob Taang for prototyping in Unity. 
 
 
 using System;
@@ -39,10 +40,7 @@ namespace Program
                     Console.WriteLine("Porjectile Imapcted Ground.");
                     break;
                 }
-
-
             }
-
         }
     }
 }
@@ -56,6 +54,12 @@ class Bullet
     //G5 – G5 bullets are short 7.5 degree boat-tails, with 6.19 caliber long tangent ogive
     //G6 – G6 are flatbase bullets with a 6 cailber secant ogive
     //G7 – Bullets with the G7 BC are long 7.5 degree boat-tails, with 10 caliber tangent ogive, and are very popular with manufacturers for extremely low-drag bullets.
+    //G8
+    //GS
+
+    // Type Def
+    public enum dragModel { G1, G2, G3, G4, G5, G6, G7, G8, GS };
+    public dragModel drag_Model;
 
     // Vectors
     double[] start_Pos = new double[3];
@@ -74,6 +78,8 @@ class Bullet
     double[] windForce_Vector = new double[3];
     double[] gravity_Vector = new double[3];
     double[] velocity_Vector_dt = new double[3];
+    double[] spinDrift_Vector = new double[3];
+    double[] spinDriftAccel_Vector = new double[3];
 
     // Metric
     private double Re = 6356766;
@@ -95,6 +101,7 @@ class Bullet
     private double elapsed_Ms;
     private double cd_Current;
     private double currentLatitude;
+    private double spinDriftMag;
 
 
     //Imperial 
@@ -112,8 +119,7 @@ class Bullet
     //
     public bool projectileImpact { get; set; } 
 
-    public enum dragModel { G1, G2, G3, G4, G5, G6, G7, G8, GS };
-    public dragModel drag_Model;
+
 
 
     public Bullet(dragModel dModel , double grains, double muzzleVelocity, double barrelTwist, double bulletDia, double bulletLen, double pressure, double temp)
@@ -137,6 +143,7 @@ class Bullet
         this.sectional_Density = this.mass_ibs / Math.Pow(this.bullet_Dia_Inch, 2);
         this.dt = 0.05; // Fixed Delta Time (Seconds)
         this.elapsed_Ms = 0;
+        this.spinDriftMag = 0;
 
         stability_Fac = GetStabilityFactor();
 
@@ -181,10 +188,10 @@ class Bullet
         getCoriolis();
         getWindForce();
         getCentripetal();
+        getSpinDrift();
+
 
         integratePosition();
-        
-
         print();
 
         // If Bullet Collide with the Ground
@@ -207,8 +214,6 @@ class Bullet
     public void integratePosition()
     {
 
-        // Integrate Acceleration
-
         // Integrate Gravity
         this.velocity_Vector[0] = this.velocity_Vector[0] + this.gravity_Vector[0];
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.gravity_Vector[1];
@@ -230,17 +235,16 @@ class Bullet
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.coriolis_Vector[2];
 
         // Integrate Centripetal
-       this.velocity_Vector[0] = this.velocity_Vector[0] + this.centripetal_Vector[0];
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.centripetal_Vector[0];
         this.velocity_Vector[1] = this.velocity_Vector[1] + this.centripetal_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.centripetal_Vector[2];
 
+        // Integrate Spin Drift
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.spinDrift_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.spinDrift_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.spinDrift_Vector[2];
 
-
-
-
-
-        // Integrate Velocity
-        // Update Displacement
+        // Integrate Velocity & Update Displacement
         this.prev_pos[0] = pos[0];
         this.prev_pos[1] = pos[1];
         this.prev_pos[2] = pos[2];
@@ -251,6 +255,24 @@ class Bullet
 
 
     }
+
+    private void getSpinDrift()
+    {
+
+        if (this.spinDriftMag == 0)
+        {
+            this.spinDriftMag = 1.25 * (GetStabilityFactor() + 1.2) * Math.Pow(dt, 1.83);
+            this.spinDriftAccel_Vector[0] = this.spinDriftMag;
+            this.spinDriftAccel_Vector[1] = 0;
+            this.spinDriftAccel_Vector[2] = 0;
+        }
+
+        this.spinDrift_Vector[0] = this.spinDrift_Vector[0] + (this.spinDriftAccel_Vector[0] * dt);
+        this.spinDrift_Vector[1] = 0;
+        this.spinDrift_Vector[2] = 0;
+
+    }
+
     private void getLat()
     {
         this.currentLatitude = 44.166130;
@@ -270,9 +292,9 @@ class Bullet
                                            + ((Math.Pow(velocity_Vector[0], 2) + Math.Pow(velocity_Vector[2], 2)) / this.Re);
 
         // Integrate To Velocity
-        this.centripetal_Vector[0] = this.centripetal_Vector[0] + (this.centripetalAccel_Vector[0] * dt);
+        this.centripetal_Vector[0] = 0;
+        this.centripetal_Vector[2] = 0;
         this.centripetal_Vector[1] = this.centripetal_Vector[1] + (this.centripetalAccel_Vector[1] * dt);
-        this.centripetal_Vector[2] = this.centripetal_Vector[2] + (this.centripetalAccel_Vector[2] * dt);
 
         //Console.WriteLine("Centripetal X = " + this.centripetal_Vector[0] + " Y = " + this.centripetal_Vector[1] + " Z = " + this.centripetal_Vector[2]);
 
@@ -407,8 +429,6 @@ class Bullet
         double cd = 0;
 
         mach = getMach(getRelativeSpeed(), temp_k);
-
-        //Console.WriteLine("Relative Speed : " + getRelativeSpeed() + " Mach: " + mach);
 
         if (drag_Model == dragModel.G1)
         {
@@ -1017,7 +1037,6 @@ class Bullet
     {
 
         //Improved Miller Formula
-
         unitConversion();
 
         double stabilityFactor;
@@ -1060,29 +1079,27 @@ class Bullet
 
         double[] output = { 0, 0, 0 };
 
+        // Vector Addation
         if (_operator == "+")
         {
             output[0] = input1[0] + input2[0];
             output[1] = input1[1] + input2[1];
             output[2] = input1[2] + input2[2];
         }
+        // Vector Subtraction
         else if (_operator == "-")
         {
             output[0] = input1[0] - input2[0];
             output[1] = input1[1] - input2[1];
             output[2] = input1[2] - input2[2];
         }
+        // Vector Dot Product
         else if (_operator == "*")
         {
             output[0] = input1[0] * input2[0];
             output[1] = input1[1] * input2[1];
             output[2] = input1[2] * input2[2];
         }
-
-        //Console.WriteLine("Input1 : " + input1[0] + " , " + input1[1] + " , " + +input1[2]);
-        //Console.WriteLine("Input2 : " + input2[0] + " , " + input2[1] + " , " + +input2[2]);
-        //Console.WriteLine("Output : " + outpout[0] + " , " + outpout[1] + " , "+ +outpout[2]);
-
         return output;
     }
 
