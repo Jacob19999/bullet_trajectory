@@ -21,7 +21,7 @@ namespace Program
 
             // Drag Model , Mass (Grains), Twist (inch/Turn), Diameter (M), Length (M), Pressure (pa) , Temp(k)
 
-            var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 822, 10, 0.0078232, 0.0338328, 101325, 288.16);
+            var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 900, 10, 0.0078232, 0.0338328, 101325, 288.16);
             bullet1.fire(0);
             Console.WriteLine("Stability Factor : " + bullet1.GetStabilityFactor());
             Console.WriteLine("Drag Coefficient : " + bullet1.getDragCoefficient());
@@ -32,7 +32,7 @@ namespace Program
 
 
             
-            for (int i = 0; i < 400; i++)
+            for (int i = 0; i < 2000; i++)
             {
 
                 bullet1.update();
@@ -46,26 +46,6 @@ namespace Program
 
 
             }
-            
-
-            /////////////////////////////////// Test Code ///////////////////////////////
-            double A = 0;
-            double N = 0;
-
-            A = 2.33355948302505e-03f; N = 1.52693913274526f;
-
-            double velFps = 2696.85;
-            double m_retardation = 0;
-
-            if (A != -1 && N != -1 && velFps > 0 && velFps < 100000)
-            {
-                m_retardation = A * Math.Pow(velFps, N) / 0.203;
-                m_retardation = m_retardation / 3.2808399;
-            }
-
-            //Console.WriteLine("Retardation Test : " + m_retardation);
-            /////////////////////////////////// Test Code ///////////////////////////////
-
 
         }
     }
@@ -168,7 +148,7 @@ class Bullet
     {
 
         this.pos[0] = 0;
-        this.pos[1] = 500;
+        this.pos[1] = 200;
         this.pos[2] = 0;
 
         firing_angle = firing_angle * (Math.PI / 180);
@@ -211,13 +191,10 @@ class Bullet
 
     public void print()
     {
-
-
         elapsed_Ms = elapsed_Ms + (this.dt) * 1000;
 
-
-        Console.WriteLine(Math.Round(elapsed_Ms/1000, 1) + "s " + Math.Round(getRelativeSpeed(), 1) + "m/s "  + Math.Round(getMach(getRelativeSpeed(), temp_k),2) + " mach , X = " + Math.Round(this.pos[0],4) + "m , Y = " + Math.Round(this.pos[1], 4) + "m , Z = " + Math.Round(this.pos[2], 4)+"m");
-
+        Console.WriteLine(Math.Round(elapsed_Ms / 1000, 1) + "s " + Math.Round(getRelativeSpeed(), 1) + "m/s " + Math.Round(getMach(getRelativeSpeed(), temp_k), 2) + " mach / X = " + Math.Round(this.pos[0], 4) + "m , Y = " + Math.Round(this.pos[1], 4) + "m , Z = " + Math.Round(this.pos[2], 4) + "m");
+        //Console.WriteLine(Math.Round(elapsed_Ms/1000, 1) + "s " + Math.Round(getRelativeSpeed(), 1) + "m/s "  + Math.Round(getMach(getRelativeSpeed(), temp_k),2) + " mach / X = " + Math.Round(this.pos[0],4) + "m , Y = " + Math.Round(this.pos[1], 4) + "m , Z = " + Math.Round(this.pos[2], 4)+"m" + " / vmag : " + Math.Round(this.velocity_Vector[0],2) + " , "+ Math.Round(this.velocity_Vector[1], 2) + " , "+ Math.Round(this.velocity_Vector[2], 2) + " / cd = "+ getDragCoefficient());
     }
 
 
@@ -226,18 +203,30 @@ class Bullet
         this.prev_pos = this.pos;
 
         // Integrate Gravity
-        this.pos = vectorOperation(this.pos, this.gravity_Vector, "+");
-        this.pos[0] = pos[0] + gravity_Vector[0] * dt;
-        this.pos[1] = pos[1] + gravity_Vector[1] * dt;
-        this.pos[2] = pos[2] + gravity_Vector[2] * dt;
+
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.gravity_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.gravity_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.gravity_Vector[2];
+
+        this.pos[0] = pos[0] + this.velocity_Vector[0] * dt;
+        this.pos[1] = pos[1] + this.velocity_Vector[1] * dt;
+        this.pos[2] = pos[2] + this.velocity_Vector[2] * dt;
+
+
+        //Console.WriteLine("gravity_Vector = " + gravity_Vector[0] + " y = " + gravity_Vector[1] + " z = " + gravity_Vector[2]);
 
         // Integrate Drag
-        this.velocity_Vector = vectorOperation(this.velocity_Vector, this.drag_Vector, "-");
-        this.pos[0] = pos[0] + velocity_Vector[0] * dt;
-        this.pos[1] = pos[1] + velocity_Vector[1] * dt;
-        this.pos[2] = pos[2] + velocity_Vector[2] * dt;
+        this.velocity_Vector[0] = this.velocity_Vector[0] - this.drag_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] - this.drag_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] - this.drag_Vector[2];
 
-        //Console.WriteLine("Velocity x = " + velocity_Vector[0] + " y = " + velocity_Vector[1] + " z = " + velocity_Vector[2]);
+
+        // Integrate Position
+        this.pos[0] = pos[0] + this.velocity_Vector[0] * dt;
+        this.pos[1] = pos[1] + this.velocity_Vector[1] * dt;
+        this.pos[2] = pos[2] + this.velocity_Vector[2] * dt;
+
+        //Console.WriteLine("drag_Vector x = " + drag_Vector[0] + " y = " + drag_Vector[1] + " z = " + drag_Vector[2]);
 
 
     }
@@ -246,9 +235,9 @@ class Bullet
     public void updateWind()
     {
         // air speed m/s
-        this.wind_Vector[0] = 2;
-        this.wind_Vector[1] = 1;
-        this.wind_Vector[2] = 5;
+        this.wind_Vector[0] = 0;
+        this.wind_Vector[1] = 0;
+        this.wind_Vector[2] = 0;
 
         this.wind_Vector[0] = this.wind_Vector[0] * dt;
         this.wind_Vector[1] = this.wind_Vector[1] * dt;
@@ -1039,14 +1028,6 @@ class Bullet
 
         return output;
     }
-
-
-
-
-
-
-
-
 
 }
 
