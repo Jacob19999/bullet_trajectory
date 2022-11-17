@@ -1012,7 +1012,7 @@ class Bullet
     private double[] vectorOperation(double[] input1, double[] input2, string _operator)
     {
 
-        double[] outpout = { 0, 0, 0 };
+        double[] output = { 0, 0, 0 };
 
         if (_operator == "+")
         {
