@@ -1016,28 +1016,28 @@ class Bullet
 
         if (_operator == "+")
         {
-            outpout[0] = input1[0] + input2[0];
-            outpout[1] = input1[1] + input2[1];
-            outpout[2] = input1[2] + input2[2];
+            output[0] = input1[0] + input2[0];
+            output[1] = input1[1] + input2[1];
+            output[2] = input1[2] + input2[2];
         }
         else if (_operator == "-")
         {
-            outpout[0] = input1[0] - input2[0];
-            outpout[1] = input1[1] - input2[1];
-            outpout[2] = input1[2] - input2[2];
+            output[0] = input1[0] - input2[0];
+            output[1] = input1[1] - input2[1];
+            output[2] = input1[2] - input2[2];
         }
         else if (_operator == "*")
         {
-            outpout[0] = input1[0] * input2[0];
-            outpout[1] = input1[1] * input2[1];
-            outpout[2] = input1[2] * input2[2];
+            output[0] = input1[0] * input2[0];
+            output[1] = input1[1] * input2[1];
+            output[2] = input1[2] * input2[2];
         }
 
         //Console.WriteLine("Input1 : " + input1[0] + " , " + input1[1] + " , " + +input1[2]);
         //Console.WriteLine("Input2 : " + input2[0] + " , " + input2[1] + " , " + +input2[2]);
         //Console.WriteLine("Output : " + outpout[0] + " , " + outpout[1] + " , "+ +outpout[2]);
 
-        return outpout;
+        return output;
     }
 
 
