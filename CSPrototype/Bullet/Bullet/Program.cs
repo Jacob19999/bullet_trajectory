@@ -29,13 +29,13 @@ namespace Program
             Console.WriteLine("Retardation : " + bullet1.getRetardation());
             
             // Integrate Trajectory Till Bullet Impact
-            for (int i = 0; i < 2000; i++)
+            for (int i = 0; i < 10000; i++)
             {
 
                 bullet1.update();
-                Thread.Sleep(50);
+                Thread.Sleep(5);
 
-                if (bullet1.projectileImpact == true)
+                if (bullet1.projectile_Despawn == true)
                 {
                     Console.WriteLine("Porjectile Imapcted Ground.");
                     break;
@@ -60,6 +60,9 @@ class Bullet
     // Type Def
     public enum dragModel { G1, G2, G3, G4, G5, G6, G7, G8, GS };
     public dragModel drag_Model;
+
+    double bulletLifeTime = 60; // Seconds
+    double timeOfFlight = 0;
 
     // Vectors
     double[] start_Pos = new double[3];
@@ -116,11 +119,7 @@ class Bullet
     private double sectional_Density;
     private double stability_Fac;
 
-    //
-    public bool projectileImpact { get; set; } 
-
-
-
+    public bool projectile_Despawn { get; set; } 
 
     public Bullet(dragModel dModel , double grains, double muzzleVelocity, double barrelTwist, double bulletDia, double bulletLen, double pressure, double temp)
     {
@@ -153,7 +152,7 @@ class Bullet
     {
 
         this.pos[0] = 0;
-        this.pos[1] = 200;
+        this.pos[1] = 5000;
         this.pos[2] = 0;
 
         this.start_Pos[0] = this.pos[0];
@@ -173,7 +172,7 @@ class Bullet
         velocity_Vector_dt[1] = this.velocity_Vector[1] * dt;
         velocity_Vector_dt[2] = 0;
 
-        projectileImpact = false;
+        projectile_Despawn = false;
 
         //Console.WriteLine("Velocity x = " + velocity_Vector[0] + " y = " + velocity_Vector[1] + " z = " + velocity_Vector[2]);
 
@@ -182,7 +181,21 @@ class Bullet
 
     public void update()
     {
-        
+
+        this.timeOfFlight = this.timeOfFlight + this.dt;
+
+        if (this.timeOfFlight >  this.bulletLifeTime )
+        {
+            projectile_Despawn = true;
+        }
+
+        // If Bullet Collide with the Ground
+        if (pos[1] < 0)
+        {
+            projectile_Despawn = true;
+        }
+
+
         getGravity();
         getDrag();
         getCoriolis();
@@ -194,11 +207,7 @@ class Bullet
         integratePosition();
         print();
 
-        // If Bullet Collide with the Ground
-        if (pos[1] < 0)
-        {
-            projectileImpact = true;
-        }
+
 
     }
 
@@ -221,7 +230,7 @@ class Bullet
 
         // Integrate Drag
         this.velocity_Vector[0] = this.velocity_Vector[0] - this.drag_Vector[0];
-        this.velocity_Vector[1] = this.velocity_Vector[1] - this.drag_Vector[1];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.drag_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] - this.drag_Vector[2];
 
         // Integrate Wind
