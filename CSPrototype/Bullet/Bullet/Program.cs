@@ -23,17 +23,17 @@ namespace Program
             // Drag Model , Mass (Grains), Twist (inch/Turn), Diameter (M), Length (M), Pressure (pa) , Temp(k)
 
             var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 900, 10, 0.0078232, 0.0338328, 101325, 288.16);
-            bullet1.fireBullet(0);
+            bullet1.fireBullet(10);
             Console.WriteLine("Stability Factor : " + bullet1.GetStabilityFactor());
             Console.WriteLine("Drag Coefficient : " + bullet1.getDragCoefficient());
             Console.WriteLine("Retardation : " + bullet1.getRetardation());
             
             // Integrate Trajectory Till Bullet Impact
-            for (int i = 0; i < 10000; i++)
+            for (int i = 0; i < 1000; i++)
             {
 
                 bullet1.update();
-                Thread.Sleep(5);
+                Thread.Sleep(50);
 
                 if (bullet1.projectile_Despawn == true)
                 {
@@ -61,7 +61,7 @@ class Bullet
     public enum dragModel { G1, G2, G3, G4, G5, G6, G7, G8, GS };
     public dragModel drag_Model;
 
-    double bulletLifeTime = 60; // Seconds
+    double bulletLifeTime = 20; // Seconds
     double timeOfFlight = 0;
 
     // Vectors
@@ -152,7 +152,7 @@ class Bullet
     {
 
         this.pos[0] = 0;
-        this.pos[1] = 5000;
+        this.pos[1] = 500;
         this.pos[2] = 0;
 
         this.start_Pos[0] = this.pos[0];
@@ -230,7 +230,7 @@ class Bullet
 
         // Integrate Drag
         this.velocity_Vector[0] = this.velocity_Vector[0] - this.drag_Vector[0];
-        this.velocity_Vector[1] = this.velocity_Vector[1] + this.drag_Vector[1];
+        this.velocity_Vector[1] = this.velocity_Vector[1] - this.drag_Vector[1];
         this.velocity_Vector[2] = this.velocity_Vector[2] - this.drag_Vector[2];
 
         // Integrate Wind
@@ -239,19 +239,17 @@ class Bullet
         this.velocity_Vector[2] = this.velocity_Vector[2] + this.windForce_Vector[2];
 
         // Integrate Coriolis
-        this.velocity_Vector[0] = this.velocity_Vector[0] + this.coriolis_Vector[0];
-        this.velocity_Vector[1] = this.velocity_Vector[1] + this.coriolis_Vector[1];
-        this.velocity_Vector[2] = this.velocity_Vector[2] + this.coriolis_Vector[2];
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.coriolisAccel_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.coriolisAccel_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.coriolisAccel_Vector[2];
 
         // Integrate Centripetal
-        this.velocity_Vector[0] = this.velocity_Vector[0] + this.centripetal_Vector[0];
-        this.velocity_Vector[1] = this.velocity_Vector[1] + this.centripetal_Vector[1];
-        this.velocity_Vector[2] = this.velocity_Vector[2] + this.centripetal_Vector[2];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.centripetalAccel_Vector[1];
 
         // Integrate Spin Drift
-        this.velocity_Vector[0] = this.velocity_Vector[0] + this.spinDrift_Vector[0];
-        this.velocity_Vector[1] = this.velocity_Vector[1] + this.spinDrift_Vector[1];
-        this.velocity_Vector[2] = this.velocity_Vector[2] + this.spinDrift_Vector[2];
+        this.velocity_Vector[0] = this.velocity_Vector[0] + this.spinDriftAccel_Vector[0];
+        this.velocity_Vector[1] = this.velocity_Vector[1] + this.spinDriftAccel_Vector[1];
+        this.velocity_Vector[2] = this.velocity_Vector[2] + this.spinDriftAccel_Vector[2];
 
         // Integrate Velocity & Update Displacement
         this.prev_pos[0] = pos[0];
@@ -275,11 +273,6 @@ class Bullet
             this.spinDriftAccel_Vector[1] = 0;
             this.spinDriftAccel_Vector[2] = 0;
         }
-
-        this.spinDrift_Vector[0] = this.spinDrift_Vector[0] + (this.spinDriftAccel_Vector[0] * dt);
-        this.spinDrift_Vector[1] = 0;
-        this.spinDrift_Vector[2] = 0;
-
     }
 
     private void getLat()
