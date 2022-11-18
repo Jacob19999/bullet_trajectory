@@ -25,3 +25,4 @@ xlabel('X')
 ylabel('Z')
 zlabel('Y')
 axis equal;
+camproj('perspective')
