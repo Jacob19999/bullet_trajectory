@@ -23,7 +23,7 @@ namespace Program
             // Drag Model , Mass (Grains), Twist (inch/Turn), Diameter (M), Length (M), Pressure (pa) , Temp(k)
 
             var bullet1 = new Bullet(Bullet.dragModel.G7, 150, 900, 10, 0.0078232, 0.0338328, 101325, 288.16);
-            bullet1.fireBullet(10);
+            bullet1.fireBullet(50);
             Console.WriteLine("Stability Factor : " + bullet1.GetStabilityFactor());
             Console.WriteLine("Drag Coefficient : " + bullet1.getDragCoefficient());
             Console.WriteLine("Retardation : " + bullet1.getRetardation());
@@ -33,7 +33,7 @@ namespace Program
             {
 
                 bullet1.update();
-                Thread.Sleep(50);
+                Thread.Sleep(5);
 
                 if (bullet1.projectile_Despawn == true)
                 {
@@ -61,7 +61,7 @@ class Bullet
     public enum dragModel { G1, G2, G3, G4, G5, G6, G7, G8, GS };
     public dragModel drag_Model;
 
-    double bulletLifeTime = 20; // Seconds
+    double bulletLifeTime = 30; // Seconds
     double timeOfFlight = 0;
 
     // Vectors
@@ -152,7 +152,7 @@ class Bullet
     {
 
         this.pos[0] = 0;
-        this.pos[1] = 500;
+        this.pos[1] = 0;
         this.pos[2] = 0;
 
         this.start_Pos[0] = this.pos[0];
@@ -195,7 +195,6 @@ class Bullet
             projectile_Despawn = true;
         }
 
-
         getGravity();
         getDrag();
         getCoriolis();
@@ -203,12 +202,8 @@ class Bullet
         getCentripetal();
         getSpinDrift();
 
-
         integratePosition();
         print();
-
-
-
     }
 
     public void print()
@@ -326,9 +321,9 @@ class Bullet
     public void updateWind()
     {
         // air speed m/s
-        this.wind_Vector[0] = 2;
-        this.wind_Vector[1] = 1;
-        this.wind_Vector[2] = -3;
+        this.wind_Vector[0] = 5;
+        this.wind_Vector[1] = 2;
+        this.wind_Vector[2] = -10;
     }
     public void getWindForce()
     {

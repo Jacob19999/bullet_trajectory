@@ -1,0 +1,15 @@
+clear all;
+close all;
+
+clc;
+data = readtable('Simulation Data.xlsx','Range','F1:I401');
+Time = data.Time_S_;
+
+x_Path =data.X;
+y_Path =data.Y;
+z_Path =data.Z;
+
+matrixPath = [x_Path;y_Path;z_Path];
+
+trajectory_plotter(data);
+
