@@ -1,5 +1,4 @@
-# bullet_trajectory
-
+# Unity Physically Based Bullet
 C# Script for the use in game engines that simulated a 3D virtual bullet's physical trajectory. Bullet class script contains the following features (Allows the user to initialize any bullet of any caliber.) 
 
 <Features>
@@ -27,4 +26,3 @@ Sample trajectory of 7.62 NATO M82 Ball in Matlab
 ![image](https://user-images.githubusercontent.com/26366586/233152119-4353c99c-d182-4b3c-a43f-acdcfda424e6.png)
 
 
-https://www.jacob-space.com/
